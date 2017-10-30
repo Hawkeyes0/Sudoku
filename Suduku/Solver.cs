@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 
 namespace Suduku.Solve
 {
@@ -14,9 +16,10 @@ namespace Suduku.Solve
         /// 输入题目<br/>
         /// 尝试解题<br/>
         /// 解不下去就找备选答案最少的单元格，并创建分支，继续解题，直到得到答案为止。
-        internal void Run()
+        internal void Run(string file = null)
         {
-            InputMatrix();
+            InputMatrix(file);
+            DateTime start = DateTime.Now;
             do
             {
                 SolveMatrix();
@@ -24,7 +27,7 @@ namespace Suduku.Solve
                 {
                     _blocks = _branchs.Pop();
                     _matrix = _branchs.Pop();
-                    Console.WriteLine($"Switch to other branch {_branchs.Count}.");
+                    Debug.WriteLine($"Switch to other branch {_branchs.Count}.");
                 }
                 else if (Finished())
                 {
@@ -33,11 +36,13 @@ namespace Suduku.Solve
                 else
                 {
                     PushBranches();
-                    Console.WriteLine($"Create branches {_branchs.Count}.");
+                    Debug.WriteLine($"Create branches {_branchs.Count}.");
                 }
                 _loopCounter++;
             } while (!Finished());
+            TimeSpan span = DateTime.Now - start;
             PrintMatrix();
+            Console.WriteLine($"Used time: {span.TotalMilliseconds}ms.");
         }
 
         /// 遍历所有元素，如果存在既没有赋值，又不存在可能性的元素，则表明当前矩阵无法继续解算
@@ -462,26 +467,29 @@ namespace Suduku.Solve
         }
 
         /// 输入数独矩阵的每一行，每个单元格连续输入，空白单元格用空格代替。然后根据输入的内容生成数独矩阵和区块矩阵
-        private void InputMatrix()
+        private void InputMatrix(string file)
         {
             int i = 0;
-            Console.WriteLine("Please input the sudoku matrix. Don't split each number. Replace blank with SPACE.");
-            for (i = 0; i < 9; i++)
+            if (string.IsNullOrWhiteSpace(file) || !File.Exists(file))
             {
-                do
+                Console.WriteLine("Please input the sudoku matrix. Don't split each number. Replace blank with SPACE.");
+                for (i = 0; i < 9; i++)
                 {
-                    Console.WriteLine($"Row {i + 1}:");
-                } while (!FillMatrix(Console.ReadLine(), i));
+                    do
+                    {
+                        Console.WriteLine($"Row {i + 1}:");
+                    } while (!FillMatrix(Console.ReadLine(), i));
+                }
             }
-            // FillMatrix(" 2738  1 ", 0);
-            // FillMatrix(" 1   6735", 1);
-            // FillMatrix("       29", 2);
-            // FillMatrix("3 5692 8 ", 3);
-            // FillMatrix("         ", 4);
-            // FillMatrix(" 6 1745 3", 5);
-            // FillMatrix("64       ", 6);
-            // FillMatrix("9518   7 ", 7);
-            // FillMatrix(" 8  6534 ", 8);
+            else
+            {
+                string[] lines = File.ReadAllLines(file);
+                for (i = 0; i < 9; i++)
+                {
+                    FillMatrix(lines[i], i);
+                }
+            }
+
             List<int> numbers = new List<int>();
             for (int b = 0; b < 9; b++)
             {
