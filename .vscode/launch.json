@@ -8,7 +8,7 @@
             "name": ".NET Core Launch (console)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build",
+            "preLaunchTask": "",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceRoot}/Suduku/bin/Debug/netcoreapp2.0/Suduku.dll",
             "args": ["--file", "puzzle.txt"],

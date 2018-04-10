@@ -2,28 +2,28 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace Suduku.Solve
 {
-    internal class Solver
+    public class Solver
     {
         private Cell[,] _matrix = new Cell[9, 9];
-        private Cell[,] _previou = null;
         private Cell[,] _blocks = new Cell[9, 9];
         private int _loopCounter = 1;
-        private Stack<Cell[,]> _branchs = new Stack<Cell[,]>();
+        private readonly Stack<Cell[,]> _branchs = new Stack<Cell[,]>();
 
         /// 输入题目<br/>
         /// 尝试解题<br/>
         /// 解不下去就找备选答案最少的单元格，并创建分支，继续解题，直到得到答案为止。
-        internal void Run(string file = null)
+        public void Run(string file = null)
         {
             InputMatrix(file);
             DateTime start = DateTime.Now;
             do
             {
                 SolveMatrix();
-                if (IsWrong() && _branchs.Count > 1 || CannotContinue())
+                if ((IsWrong() || CannotContinue()) && _branchs.Count > 1)
                 {
                     _blocks = _branchs.Pop();
                     _matrix = _branchs.Pop();
@@ -74,6 +74,8 @@ namespace Suduku.Solve
                 }
             }
 
+            Debug.Assert(cell != null, nameof(cell) + " != null");
+
             foreach (int num in cell.Possible)
             {
                 cell.Value = num;
@@ -82,28 +84,15 @@ namespace Suduku.Solve
                 _branchs.Push(clone.Blocks);
             }
 
-            if (cell.Possible.Count > 1)
-            {
-                _branchs.Pop();
-                _branchs.Pop();
-            }
+            if (cell.Possible.Count <= 1) return;
+            _branchs.Pop();
+            _branchs.Pop();
         }
 
         /// 判断是否所有元素都被赋值
         private bool Finished()
         {
-            int count = 0;
-            foreach (Cell cell in _matrix)
-            {
-                // if (!cell.Value.HasValue && cell.Possible.Count == 0)
-                // {
-                //     return true;
-                // }
-                if (cell.Value.HasValue)
-                {
-                    count++;
-                }
-            }
+            int count = _matrix.Cast<Cell>().Count(cell => cell.Value.HasValue);
             return count == 81;
         }
 
@@ -112,7 +101,6 @@ namespace Suduku.Solve
         {
             Cell[,] toMatrix = new Cell[from.GetLength(0), from.GetLength(1)];
             Cell[,] toBlocks = new Cell[from.GetLength(0), from.GetLength(1)];
-            int i;
             for (int r = 0; r < 9; r++)
             {
                 for (int c = 0; c < 9; c++)
@@ -125,12 +113,12 @@ namespace Suduku.Solve
             }
             for (int b = 0; b < 9; b++)
             {
-                i = 0;
+                var i = 0;
                 for (int r = 0; r < 3; r++)
                 {
                     for (int c = 0; c < 3; c++)
                     {
-                        toBlocks[b, i] = toMatrix[((int)(b / 3)) * 3 + r, (b % 3) * 3 + c];
+                        toBlocks[b, i] = toMatrix[b / 3 * 3 + r, (b % 3) * 3 + c];
                         i++;
                     }
                 }
@@ -172,12 +160,11 @@ namespace Suduku.Solve
         /// 按区块进行可能性排除
         private void ComputeBlock()
         {
-            List<int> numbers = new List<int>();
             for (int b = 0; b < 9; b++)
             {
                 for (int i = 0; i < 9; i++)
                 {
-                    numbers = _blocks[b, i].Possible;
+                    var numbers = _blocks[b, i].Possible;
                     for (int ip = 0; ip < 9; ip++)
                     {
                         if (ip == i) continue;
@@ -193,12 +180,11 @@ namespace Suduku.Solve
         /// 按列进行可能性排除
         private void ComputeColumn()
         {
-            List<int> numbers;
             for (int c = 0; c < 9; c++)
             {
                 for (int r = 0; r < 9; r++)
                 {
-                    numbers = _matrix[r, c].Possible;
+                    var numbers = _matrix[r, c].Possible;
                     for (int rp = 0; rp < 9; rp++)
                     {
                         if (r == rp) continue;
@@ -214,10 +200,9 @@ namespace Suduku.Solve
         /// 按行进行可能性排除
         private void ComputeRow()
         {
-            List<int> numbers;
             for (int r = 0; r < 9; r++)
             {
-                numbers = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+                var numbers = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
                 for (int c = 0; c < 9; c++)
                 {
                     if (_matrix[r, c].Value.HasValue)
@@ -469,7 +454,7 @@ namespace Suduku.Solve
         /// 输入数独矩阵的每一行，每个单元格连续输入，空白单元格用空格代替。然后根据输入的内容生成数独矩阵和区块矩阵
         private void InputMatrix(string file)
         {
-            int i = 0;
+            int i;
             if (string.IsNullOrWhiteSpace(file) || !File.Exists(file))
             {
                 Console.WriteLine("Please input the sudoku matrix. Don't split each number. Replace blank with SPACE.");
@@ -490,7 +475,6 @@ namespace Suduku.Solve
                 }
             }
 
-            List<int> numbers = new List<int>();
             for (int b = 0; b < 9; b++)
             {
                 i = 0;
@@ -498,7 +482,7 @@ namespace Suduku.Solve
                 {
                     for (int c = 0; c < 3; c++)
                     {
-                        _blocks[b, i] = _matrix[((int)(b / 3)) * 3 + r, (b % 3) * 3 + c];
+                        _blocks[b, i] = _matrix[b / 3 * 3 + r, (b % 3) * 3 + c];
                         i++;
                     }
                 }

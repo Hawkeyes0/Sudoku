@@ -9,16 +9,13 @@ namespace Suduku
         {
             Console.WriteLine("Hello World!");
             Solver solver = new Solver();
-            if (args.Length > 1)
+            if (args.Length > 1 && args[0] == "--file")
             {
-                if (args[0] == "--file")
-                {
-                    solver.Run(args[1]);
-                }
-                else
-                {
-                    solver.Run();
-                }
+                solver.Run(args[1]);
+            }
+            else
+            {
+                solver.Run();
             }
         }
     }

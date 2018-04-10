@@ -16,4 +16,10 @@
     <ProjectReference Include="..\Suduku\Suduku.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="puzzle.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
